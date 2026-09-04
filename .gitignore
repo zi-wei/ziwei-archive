@@ -1,5 +1,8 @@
 /deploy/
 /docs/
-/tests/
-/tools/
-/package.json
+/tools/*
+!/tools/build-site.cjs
+!/tools/server.cjs
+/dist/
+/node_modules/
+/artifacts/

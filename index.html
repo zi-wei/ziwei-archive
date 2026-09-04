@@ -12,11 +12,12 @@
   <body data-page="home">
     <header class="site-header">
       <nav class="site-nav" aria-label="主导航">
-        <a class="nav-link" data-route="home" href="/">首页</a>
+        <a class="nav-link" data-route="home" href="/" aria-current="page">首页</a>
         <a class="nav-link" data-route="daily" href="/daily/">日常</a>
         <a class="nav-mark" href="/" aria-label="ZiWei Archive 首页">
           <span class="nav-mark-glyph" aria-hidden="true">✶</span>
         </a>
+        <a class="nav-link" data-route="articles" href="/articles/">文章</a>
         <a class="nav-link" data-route="about" href="/about/">关于</a>
       </nav>
     </header>
@@ -24,20 +25,26 @@
     <div class="page-shell">
       <main>
         <section class="hero" aria-labelledby="hero-title">
-          <canvas id="dither-field" class="hero-canvas" data-source="/assets/img/apple-source.jpg" aria-hidden="true"></canvas>
+          <canvas id="apple-starfield" class="hero-canvas" data-source="/assets/img/apple-source.jpg" aria-hidden="true"></canvas>
           <div class="hero-content content-wrap">
-            <h1 id="hero-title" class="pixel-title">ZiWei ARCHIVE</h1>
-
-            <div class="status-strip" aria-label="当前状态">
-              <span class="status-item">STATUS: CREATING</span>
-              <span class="status-item">ZIWEI</span>
-              <span class="status-item">LATE-NIGHT SIGNALS</span>
+            <div class="hero-heading">
+              <p class="hero-kicker">PERSONAL SIGNAL ARCHIVE // 2026</p>
+              <h1 id="hero-title" class="pixel-title">ZiWei ARCHIVE</h1>
+              <p class="hero-intro">记录正在学习, 构建和思考的片段. 让每一条微弱信号都有可以返回的坐标.</p>
             </div>
 
-            <blockquote class="quote-panel">
-              <p class="quote-text">"EVERY SIGNAL LEAVES A TRACE, EVEN AFTER THE NOISE IS GONE."</p>
-              <span class="quote-credit">- ARCHIVE // 0X5A</span>
-            </blockquote>
+            <div class="hero-lower">
+              <div class="status-strip" aria-label="当前状态">
+                <span class="status-item">STATUS: CREATING</span>
+                <span class="status-item">ZIWEI</span>
+                <span class="status-item">LATE-NIGHT SIGNALS</span>
+              </div>
+
+              <blockquote class="quote-panel">
+                <p class="quote-text">"EVERY SIGNAL LEAVES A TRACE, EVEN AFTER THE NOISE IS GONE."</p>
+                <span class="quote-credit">- ARCHIVE // 0X5A</span>
+              </blockquote>
+            </div>
           </div>
         </section>
 
@@ -91,6 +98,12 @@ LAUNCH_MODULE: HOME
               <p>写下正在发生的事, 保留每一次微小的偏移.</p>
               <span class="module-link"><span>LAUNCH_MODULE</span><span aria-hidden="true">-&gt;</span></span>
             </a>
+            <a class="module-card" href="/articles/">
+              <span class="module-index">0x41</span>
+              <h3>Article Index</h3>
+              <p>收纳完整的思考, 构建记录和仍在延伸的问题.</p>
+              <span class="module-link"><span>READ_ARCHIVE</span><span aria-hidden="true">-&gt;</span></span>
+            </a>
             <a class="module-card" href="/about/">
               <span class="module-index">0x52</span>
               <h3>About Archive</h3>
@@ -135,7 +148,7 @@ LAUNCH_MODULE: HOME
       </footer>
     </div>
 
-    <script defer src="/assets/js/dither.js"></script>
+    <script defer src="/assets/js/apple-starfield.js"></script>
     <script defer src="/assets/js/site.js"></script>
   </body>
 </html>

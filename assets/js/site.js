@@ -45,9 +45,9 @@
     revealItems.forEach(function (item) { item.classList.add('is-visible'); });
   }
 
-  var canvas = document.getElementById('dither-field');
-  if (canvas && window.DitherField) {
-    var field = new window.DitherField(canvas, canvas.getAttribute('data-source'));
+  var canvas = document.getElementById('apple-starfield');
+  if (canvas && window.AppleStarfield) {
+    var field = new window.AppleStarfield(canvas, canvas.getAttribute('data-source'));
     field.start();
     window.addEventListener('pagehide', function () { field.destroy(); }, { once: true });
   }
