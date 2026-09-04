@@ -49,6 +49,8 @@
     this.boundScroll = this.onScroll.bind(this);
     this.boundVisibility = this.onVisibility.bind(this);
     this.boundMotion = this.onMotionChange.bind(this);
+    this.boundReplay = this.replay.bind(this);
+    this.boundKeyDown = this.onKeyDown.bind(this);
     this.observer = null;
   }
 
@@ -59,6 +61,8 @@
     window.addEventListener('pointermove', this.boundPointer, { passive: true });
     window.addEventListener('scroll', this.boundScroll, { passive: true });
     document.addEventListener('visibilitychange', this.boundVisibility);
+    this.canvas.addEventListener('click', this.boundReplay);
+    this.canvas.addEventListener('keydown', this.boundKeyDown);
     if (this.motionQuery.addEventListener) {
       this.motionQuery.addEventListener('change', this.boundMotion);
     }
@@ -273,6 +277,18 @@
     }
   };
 
+  AppleStarfield.prototype.replay = function () {
+    if (this.destroyed || this.reduceMotion || !this.particles.length) return;
+    this.introStart = performance.now();
+    delete this.canvas.dataset.formation;
+  };
+
+  AppleStarfield.prototype.onKeyDown = function (event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    this.replay();
+  };
+
   AppleStarfield.prototype.animate = function () {
     var self = this;
     if (this.destroyed || this.reduceMotion) return;
@@ -367,6 +383,8 @@
     window.removeEventListener('pointermove', this.boundPointer);
     window.removeEventListener('scroll', this.boundScroll);
     document.removeEventListener('visibilitychange', this.boundVisibility);
+    this.canvas.removeEventListener('click', this.boundReplay);
+    this.canvas.removeEventListener('keydown', this.boundKeyDown);
     if (this.motionQuery.removeEventListener) {
       this.motionQuery.removeEventListener('change', this.boundMotion);
     }

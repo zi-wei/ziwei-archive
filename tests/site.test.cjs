@@ -223,6 +223,34 @@ async function main() {
       }
     }
 
+    await check('clicking the apple replays its formation', async () => {
+      const page = await browser.newPage({
+        viewport: { width: 1440, height: 1000 },
+        deviceScaleFactor: 1,
+      });
+
+      try {
+        await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: 30000 });
+        const canvas = page.locator('#apple-starfield');
+        await page.waitForFunction(() => (
+          document.querySelector('#apple-starfield')?.dataset.formation === 'complete'
+        ), undefined, { timeout: 7000 });
+
+        assert.equal(await canvas.getAttribute('role'), 'button');
+        assert.equal(await canvas.getAttribute('tabindex'), '0');
+        await canvas.click({ position: { x: 720, y: 450 }, timeout: 1000 });
+        assert.notEqual(await canvas.getAttribute('data-formation'), 'complete');
+        await page.waitForFunction(() => (
+          document.querySelector('#apple-starfield')?.dataset.formation === 'complete'
+        ), undefined, { timeout: 7000 });
+
+        await canvas.press('Enter');
+        assert.notEqual(await canvas.getAttribute('data-formation'), 'complete');
+      } finally {
+        await page.close();
+      }
+    });
+
     await check('apple animation resumes after reduced motion is disabled', async () => {
       const page = await browser.newPage({
         viewport: { width: 1440, height: 1000 },
