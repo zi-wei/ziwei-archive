@@ -33,6 +33,9 @@
     this.context = canvas.getContext('2d', { alpha: false });
     this.imageUrl = imageUrl;
     this.source = null;
+    this.hero = document.querySelector('.hero');
+    this.stage = document.querySelector('.hero-stage');
+    this.replayButton = document.querySelector('.apple-replay');
     this.targetPoints = [];
     this.particles = [];
     this.frame = 0;
@@ -41,6 +44,7 @@
     this.destroyed = false;
     this.pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
     this.scrollY = window.scrollY || 0;
+    this.sceneProgress = 0;
     this.motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
     this.reduceMotion = this.motionQuery.matches;
@@ -50,28 +54,21 @@
     this.boundVisibility = this.onVisibility.bind(this);
     this.boundMotion = this.onMotionChange.bind(this);
     this.boundReplay = this.replay.bind(this);
-    this.boundKeyDown = this.onKeyDown.bind(this);
-    this.observer = null;
   }
 
   AppleStarfield.prototype.start = function () {
     var self = this;
     this.resize();
+    this.onScroll();
     window.addEventListener('resize', this.boundResize, { passive: true });
     window.addEventListener('pointermove', this.boundPointer, { passive: true });
     window.addEventListener('scroll', this.boundScroll, { passive: true });
     document.addEventListener('visibilitychange', this.boundVisibility);
-    this.canvas.addEventListener('click', this.boundReplay);
-    this.canvas.addEventListener('keydown', this.boundKeyDown);
+    if (this.replayButton) this.replayButton.addEventListener('click', this.boundReplay);
     if (this.motionQuery.addEventListener) {
       this.motionQuery.addEventListener('change', this.boundMotion);
     }
-    if ('IntersectionObserver' in window) {
-      this.observer = new IntersectionObserver(function (entries) {
-        self.visible = entries[0] ? entries[0].isIntersecting : true;
-      }, { rootMargin: '120px 0px' });
-      this.observer.observe(this.canvas);
-    }
+    document.fonts.ready.then(function () { if (!self.destroyed) self.resize(); });
 
     var image = new Image();
     image.decoding = 'async';
@@ -201,26 +198,28 @@
   AppleStarfield.prototype.createParticles = function () {
     var random = createRandom(1741);
     var cssWidth = this.canvas.width / this.pixelRatio;
-    var count = cssWidth < 600 ? 2100 : 3600;
+    var count = cssWidth < 600 ? 2600 : 4800;
     var points = this.targetPoints;
     this.particles = [];
 
     for (var index = 0; index < count; index += 1) {
       var point = points[Math.floor(random() * points.length)];
-      var highlight = random() < (point.edge ? 0.16 : 0.055);
+      var highlight = random() < (point.edge ? 0.12 : 0.035);
       var colorSeed = random();
       this.particles.push({
         targetX: point.x + (random() - 0.5) * 0.008,
         targetY: point.y + (random() - 0.5) * 0.008,
-        scatterX: random(),
-        scatterY: random(),
-        size: highlight ? 1.25 + random() * 1.8 : 0.45 + random() * 0.9,
+        scatterX: -0.16 + random() * 1.32,
+        scatterY: -0.16 + random() * 1.32,
+        size: highlight ? 1 + random() * 1.3 : 0.3 + random() * 0.75,
         alpha: highlight ? 0.72 + random() * 0.24 : 0.28 + random() * 0.5,
         delay: 0.08 + random() * 0.24,
         duration: 0.56 + random() * 0.16,
         arc: 0.32 + random() * 0.3,
         phase: random() * TAU,
         speed: 0.35 + random() * 0.55,
+        burst: 0.7 + random() * 1.5,
+        depth: 0.25 + random() * 0.75,
         background: random() < 0.085,
         highlight: highlight,
         color: colorSeed < 0.045
@@ -246,6 +245,24 @@
       this.canvas.height = height;
     }
     if (crossedBreakpoint && this.targetPoints.length) this.createParticles();
+    if (this.stage) {
+      var stageRect = this.stage.getBoundingClientRect();
+      var stageTop = parseFloat(getComputedStyle(this.stage).top) || 0;
+      var heading = this.stage.querySelector('.hero-heading');
+      var lower = this.stage.querySelector('.hero-lower');
+      // Offset geometry stays independent of the scroll transforms on the copy.
+      var areaTop = heading.offsetTop + heading.offsetHeight + 22;
+      var areaBottom = lower.offsetTop - 24;
+      var contentTop = this.stage.querySelector('.hero-content').offsetTop;
+      var available = Math.max(100, areaBottom - areaTop);
+      this.targetWidth = Math.min(rect.width * 0.76, available * 0.82, 500);
+      this.centerY = stageTop + contentTop + areaTop + available * 0.5;
+      this.sceneTop = this.hero.getBoundingClientRect().top + window.scrollY - stageTop;
+      this.trackLength = Math.max(1, this.hero.offsetHeight - stageRect.height);
+      this.stage.style.setProperty('--apple-size', (this.targetWidth * 1.12) + 'px');
+      this.stage.style.setProperty('--apple-top', (this.centerY - stageTop - this.targetWidth * 0.56) + 'px');
+    }
+    this.onScroll();
     if (this.targetPoints.length) {
       this.drawFrame(this.reduceMotion ? this.introStart + INTRO_DURATION : performance.now());
     }
@@ -260,16 +277,28 @@
 
   AppleStarfield.prototype.onScroll = function () {
     this.scrollY = window.scrollY || 0;
+    if (this.hero && this.stage) {
+      this.sceneProgress = clamp((this.scrollY - this.sceneTop) / this.trackLength, 0, 1);
+      this.canvas.dataset.sceneProgress = this.sceneProgress.toFixed(3);
+    }
+    if (this.reduceMotion) this.drawFrame(performance.now());
   };
 
   AppleStarfield.prototype.onVisibility = function () {
     this.visible = !document.hidden;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = 0;
+    if (this.visible) this.animate();
   };
 
   AppleStarfield.prototype.onMotionChange = function (event) {
     this.reduceMotion = event.matches;
     this.pointer.targetX = 0;
     this.pointer.targetY = 0;
+    this.pointer.x = 0;
+    this.pointer.y = 0;
+    if (this.frame) cancelAnimationFrame(this.frame);
+    this.frame = 0;
     if (this.reduceMotion) {
       this.drawFrame(this.introStart + INTRO_DURATION);
     } else if (this.particles.length) {
@@ -283,16 +312,11 @@
     delete this.canvas.dataset.formation;
   };
 
-  AppleStarfield.prototype.onKeyDown = function (event) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    event.preventDefault();
-    this.replay();
-  };
-
   AppleStarfield.prototype.animate = function () {
     var self = this;
-    if (this.destroyed || this.reduceMotion) return;
+    if (this.destroyed || this.reduceMotion || document.hidden || this.frame) return;
     this.frame = requestAnimationFrame(function (time) {
+      self.frame = 0;
       if (self.visible && !document.hidden) self.drawFrame(time);
       self.animate();
     });
@@ -306,16 +330,19 @@
     var context = this.context;
     var elapsed = Math.max(0, time - this.introStart);
     var introProgress = this.reduceMotion ? 1 : clamp(elapsed / INTRO_DURATION, 0, 1);
-    var scrollStart = cssHeight * 0.16;
-    var scrollScatter = this.reduceMotion
-      ? smootherstep(clamp((this.scrollY - scrollStart) / (cssHeight * 0.72), 0, 1))
-      : smootherstep(clamp((this.scrollY - scrollStart) / (cssHeight * 0.72), 0, 1));
-    var targetWidth = Math.min(
-      cssWidth * (cssWidth < 600 ? 0.78 : 0.49),
-      cssHeight * (cssWidth < 600 ? 0.42 : 0.58),
-    );
+    var scrollScatter = smootherstep(clamp((this.sceneProgress - 0.08) / 0.74, 0, 1));
+    var motionTime = this.reduceMotion ? 0 : time * 0.001;
+    var targetWidth = this.targetWidth;
     var centerX = cssWidth * 0.5;
-    var centerY = cssHeight * (cssWidth < 600 ? 0.47 : 0.46);
+    var centerY = this.centerY;
+
+    this.canvas.dataset.scatter = scrollScatter.toFixed(3);
+    if (this.hero) {
+      this.hero.style.setProperty('--hero-scatter', scrollScatter.toFixed(3));
+      this.hero.style.setProperty('--hero-copy-alpha', clamp(1 - scrollScatter * 1.18, 0, 1).toFixed(3));
+      this.hero.style.setProperty('--hero-copy-shift', (scrollScatter * 46).toFixed(1));
+    }
+    if (this.replayButton) this.replayButton.disabled = this.reduceMotion || scrollScatter > 0.1;
 
     this.pointer.x += (this.pointer.targetX - this.pointer.x) * 0.055;
     this.pointer.y += (this.pointer.targetY - this.pointer.y) * 0.055;
@@ -337,8 +364,11 @@
       var pull = (smoothPull + Math.sin(smoothPull * Math.PI * 0.5)) * 0.5;
       if (particle.background) pull = 0;
 
-      var scatterX = particle.scatterX * cssWidth;
-      var scatterY = particle.scatterY * cssHeight;
+      // Wrap beyond the screen edge, with different speeds for near and far stars.
+      var spanX = cssWidth * 1.32;
+      var spanY = cssHeight * 1.32;
+      var scatterX = ((particle.scatterX + 0.16) * cssWidth + motionTime * (2 + particle.depth * 7)) % spanX - cssWidth * 0.16;
+      var scatterY = ((particle.scatterY + 0.16) * cssHeight + motionTime * (1 + particle.depth * 3)) % spanY - cssHeight * 0.16;
       var deltaX = scatterX - centerX;
       var deltaY = scatterY - centerY;
       var angle = Math.sin(pull * Math.PI) * particle.arc;
@@ -348,19 +378,25 @@
       var targetY = centerY + particle.targetY * targetWidth + this.pointer.y;
       var formedX = lerp(rotatedX, targetX, pull);
       var formedY = lerp(rotatedY, targetY, pull);
-      var x = lerp(formedX, scatterX, scrollScatter);
-      var y = lerp(formedY, scatterY, scrollScatter);
+      var radialDistance = Math.hypot(targetX - centerX, targetY - centerY) || 1;
+      var radialX = (targetX - centerX) / radialDistance;
+      var radialY = (targetY - centerY) / radialDistance;
+      var burst = Math.sin(scrollScatter * Math.PI) * particle.burst * targetWidth * 0.1;
+      var driftX = Math.sin(motionTime * 0.45 * particle.speed + particle.phase) * scrollScatter * 9;
+      var driftY = Math.cos(motionTime * 0.38 * particle.speed + particle.phase) * scrollScatter * 7;
+      var x = lerp(formedX, scatterX, scrollScatter) + radialX * burst + driftX;
+      var y = lerp(formedY, scatterY, scrollScatter) + radialY * burst + driftY;
 
       var reveal = particle.background
-        ? 0.35
+        ? lerp(0.35, 1, scrollScatter)
         : smootherstep(clamp(introProgress * 5 - particle.delay * 2, 0, 1));
-      var twinkle = 0.84 + Math.sin(time * 0.001 * particle.speed + particle.phase) * 0.16;
-      var alpha = particle.alpha * reveal * twinkle * (1 - scrollScatter * 0.55);
-      var size = particle.size * (0.72 + pull * 0.36);
+      var twinkle = 0.82 + Math.sin(motionTime * particle.speed + particle.phase) * 0.18;
+      var alpha = particle.alpha * reveal * twinkle * (1 - scrollScatter * 0.32);
+      var size = particle.size * (0.72 + pull * 0.36) * (1 - scrollScatter * 0.18);
       context.fillStyle = 'rgba(' + particle.color + ',' + alpha.toFixed(3) + ')';
 
       if (size < 1.15) {
-        context.fillRect(x, y, 1, 1);
+        context.fillRect(x, y, Math.max(0.65, size), Math.max(0.65, size));
       } else {
         context.beginPath();
         context.arc(x, y, size, 0, TAU);
@@ -369,6 +405,17 @@
           context.fillRect(x - size * 2.4, y - 0.35, size * 4.8, 0.7);
           context.fillRect(x - 0.35, y - size * 2.4, 0.7, size * 4.8);
         }
+      }
+
+      if (particle.highlight && scrollScatter > 0.12 && scrollScatter < 0.92 && index % 4 === 0) {
+        var trailX = (scatterX - formedX) * 0.035 * scrollScatter;
+        var trailY = (scatterY - formedY) * 0.035 * scrollScatter;
+        context.strokeStyle = 'rgba(' + particle.color + ',' + (alpha * 0.28).toFixed(3) + ')';
+        context.lineWidth = Math.max(0.35, size * 0.3);
+        context.beginPath();
+        context.moveTo(x, y);
+        context.lineTo(x - trailX, y - trailY);
+        context.stroke();
       }
     }
 
@@ -383,12 +430,10 @@
     window.removeEventListener('pointermove', this.boundPointer);
     window.removeEventListener('scroll', this.boundScroll);
     document.removeEventListener('visibilitychange', this.boundVisibility);
-    this.canvas.removeEventListener('click', this.boundReplay);
-    this.canvas.removeEventListener('keydown', this.boundKeyDown);
+    if (this.replayButton) this.replayButton.removeEventListener('click', this.boundReplay);
     if (this.motionQuery.removeEventListener) {
       this.motionQuery.removeEventListener('change', this.boundMotion);
     }
-    if (this.observer) this.observer.disconnect();
     if (this.frame) cancelAnimationFrame(this.frame);
   };
 

@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/assets/css/site.css">
   </head>
   <body data-page="home">
+    <canvas id="apple-starfield" class="hero-canvas" data-source="/assets/img/apple-source.jpg" aria-hidden="true"></canvas>
     <header class="site-header">
       <nav class="site-nav" aria-label="主导航">
         <a class="nav-link" data-route="home" href="/" aria-current="page">首页</a>
@@ -25,26 +26,32 @@
     <div class="page-shell">
       <main>
         <section class="hero" aria-labelledby="hero-title">
-          <canvas id="apple-starfield" class="hero-canvas" data-source="/assets/img/apple-source.jpg" role="button" tabindex="0" aria-label="重新汇聚苹果星空"></canvas>
-          <div class="hero-content content-wrap">
-            <div class="hero-heading">
-              <p class="hero-kicker">PERSONAL SIGNAL ARCHIVE // 2026</p>
-              <h1 id="hero-title" class="pixel-title">ZiWei ARCHIVE</h1>
-              <p class="hero-intro">记录正在学习, 构建和思考的片段. 让每一条微弱信号都有可以返回的坐标.</p>
-            </div>
-
-            <div class="hero-lower">
-              <div class="status-strip" aria-label="当前状态">
-                <span class="status-item">STATUS: CREATING</span>
-                <span class="status-item">ZIWEI</span>
-                <span class="status-item">LATE-NIGHT SIGNALS</span>
+          <div class="hero-stage">
+            <button class="apple-replay" type="button" aria-label="重新汇聚苹果星空"></button>
+            <div class="hero-content content-wrap">
+              <div class="hero-heading">
+                <p class="hero-kicker">PERSONAL SIGNAL ARCHIVE // 2026</p>
+                <h1 id="hero-title" class="pixel-title">ZiWei ARCHIVE</h1>
+                <p class="hero-intro">记录正在学习, 构建和思考的片段. 让每一条微弱信号都有可以返回的坐标.</p>
               </div>
 
-              <blockquote class="quote-panel">
-                <p class="quote-text">"EVERY SIGNAL LEAVES A TRACE, EVEN AFTER THE NOISE IS GONE."</p>
-                <span class="quote-credit">- ARCHIVE // 0X5A</span>
-              </blockquote>
+              <div class="hero-lower">
+                <div class="status-strip" aria-label="当前状态">
+                  <span class="status-item">STATUS: CREATING</span>
+                  <span class="status-item">ZIWEI</span>
+                  <span class="status-item">LATE-NIGHT SIGNALS</span>
+                </div>
+
+                <blockquote class="quote-panel">
+                  <p class="quote-text">"EVERY SIGNAL LEAVES A TRACE, EVEN AFTER THE NOISE IS GONE."</p>
+                  <span class="quote-credit">- ARCHIVE // 0X5A</span>
+                </blockquote>
+              </div>
             </div>
+            <a class="hero-next" href="#identity-title" aria-label="进入档案身份区">
+              <span>下滑散开 / 进入档案</span>
+              <i aria-hidden="true"></i>
+            </a>
           </div>
         </section>
 

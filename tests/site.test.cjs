@@ -76,6 +76,27 @@ function discoverChrome() {
   return candidates.find((candidate) => fs.existsSync(candidate));
 }
 
+async function starMetrics(page) {
+  return page.locator('#apple-starfield').evaluate((canvas) => {
+    const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+    let signature = 0;
+    let lit = 0;
+    let spread = 0;
+    for (let i = 0; i < pixels.length; i += 16) {
+      const light = pixels[i] + pixels[i + 1] + pixels[i + 2];
+      signature = (Math.imul(signature, 31) + light) >>> 0;
+      if (light > 65) {
+        const pixel = i / 4;
+        const x = (pixel % canvas.width) / canvas.width - 0.5;
+        const y = Math.floor(pixel / canvas.width) / canvas.height - 0.55;
+        spread += x * x + y * y;
+        lit += 1;
+      }
+    }
+    return { signature, lit, spread: spread / Math.max(1, lit) };
+  });
+}
+
 async function main() {
   await check('required source files exist', () => {
     const missing = requiredFiles.filter((file) => !fs.existsSync(path.join(root, file)));
@@ -107,7 +128,7 @@ async function main() {
   const { chromium } = require('playwright-core');
   const server = createStaticServer(distRoot);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  const baseUrl = process.env.SITE_BASE_URL || `http://127.0.0.1:${server.address().port}`;
   const executablePath = discoverChrome();
   assert.ok(executablePath, 'Chrome or Edge is required for browser verification');
   const browser = await chromium.launch({
@@ -172,10 +193,8 @@ async function main() {
               await page.waitForFunction(() => (
                 document.querySelector('#apple-starfield')?.dataset.formation === 'complete'
               ), undefined, { timeout: 7000 });
-              const nextBandTop = await page.locator('[data-next-band]').evaluate(
-                (element) => element.getBoundingClientRect().top,
-              );
-              assert.ok(nextBandTop < viewport.height, 'next content band is hidden');
+              const nextCue = await page.locator('.hero-next').boundingBox();
+              assert.ok(nextCue && nextCue.y < viewport.height, 'next archive cue is hidden');
 
               const visiblePixels = await page.locator('#apple-starfield').evaluate((canvas) => {
                 const pixels = canvas.getContext('2d').getImageData(
@@ -191,6 +210,66 @@ async function main() {
                 return count;
               });
               assert.ok(visiblePixels > 200, 'apple starfield canvas is blank');
+              const formedMetrics = await starMetrics(page);
+              const appleBox = await page.locator('.apple-replay').boundingBox();
+              const headingBox = await page.locator('.hero-heading').boundingBox();
+              const lowerBox = await page.locator('.hero-lower').boundingBox();
+              assert.ok(appleBox.y > headingBox.y + headingBox.height, 'apple overlaps the introduction');
+              assert.ok(appleBox.y + appleBox.height < lowerBox.y, 'apple overlaps the status strip');
+              await page.screenshot({ path: path.join(artifactDir, `home-${viewport.name}-formed.png`) });
+
+              const scene = await page.locator('.hero').evaluate((element) => ({
+                top: element.getBoundingClientRect().top + window.scrollY,
+                track: Math.max(1, element.offsetHeight - element.querySelector('.hero-stage').getBoundingClientRect().height),
+              }));
+              await page.evaluate(() => { document.documentElement.style.scrollBehavior = 'auto'; });
+              await page.evaluate((target) => window.scrollTo(0, target), scene.top + scene.track * 0.36);
+              await page.waitForFunction(() => Number.parseFloat(
+                document.querySelector('#apple-starfield')?.dataset.scatter || '0',
+              ) > 0.35);
+              const midState = await page.locator('#apple-starfield').evaluate((canvas) => ({
+                scatter: Number.parseFloat(canvas.dataset.scatter || '0'),
+                rect: canvas.getBoundingClientRect().toJSON(),
+              }));
+              assert.ok(midState.scatter > 0.35, 'scroll did not disperse the stars');
+              assert.ok(midState.rect.bottom > 0 && midState.rect.top < viewport.height, 'starfield left the viewport during scatter');
+              assert.ok(midState.rect.top === 0 && midState.rect.height >= viewport.height, 'starfield does not cover the viewport');
+              await page.screenshot({
+                path: path.join(artifactDir, `home-${viewport.name}-scatter-mid.png`),
+              });
+
+              await page.evaluate((target) => window.scrollTo(0, target), scene.top + scene.track * 0.98);
+              await page.waitForFunction(() => Number.parseFloat(
+                document.querySelector('#apple-starfield')?.dataset.scatter || '0',
+              ) > 0.9);
+              await page.screenshot({
+                path: path.join(artifactDir, `home-${viewport.name}-scattered.png`),
+              });
+              const scatteredMetrics = await starMetrics(page);
+              assert.ok(scatteredMetrics.spread > formedMetrics.spread * 1.4, 'rendered stars did not spread beyond the apple');
+
+              for (const section of ['[data-next-band]', '#recent', '.site-footer']) {
+                await page.locator(section).scrollIntoViewIfNeeded();
+                await page.waitForFunction(() => Number(document.querySelector('#apple-starfield').dataset.scatter) > 0.99);
+                const field = await page.locator('#apple-starfield').boundingBox();
+                assert.equal(field.y, 0, 'background scrolled away below the hero');
+                const before = await starMetrics(page);
+                assert.ok(before.lit > 100, 'star background is too faint below the hero');
+                await page.waitForTimeout(400);
+                const after = await starMetrics(page);
+                assert.notEqual(before.signature, after.signature, 'star background stopped moving after scroll');
+                await page.screenshot({ path: path.join(artifactDir, `home-${viewport.name}-${section.replace(/[^a-z-]/g, '')}.png`) });
+                assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+              }
+
+              await page.evaluate(() => window.scrollTo(0, 0));
+              await page.waitForFunction(() => Number.parseFloat(
+                document.querySelector('#apple-starfield')?.dataset.scatter || '1',
+              ) < 0.05);
+              assert.ok(
+                Number.parseFloat(await page.locator('#apple-starfield').getAttribute('data-scene-progress')) < 0.05,
+                'scrolling back did not restore the formation',
+              );
             }
 
             if (route.name === 'article-detail') {
@@ -232,19 +311,18 @@ async function main() {
       try {
         await page.goto(`${baseUrl}/`, { waitUntil: 'networkidle', timeout: 30000 });
         const canvas = page.locator('#apple-starfield');
+        const replay = page.getByRole('button', { name: '重新汇聚苹果星空' });
         await page.waitForFunction(() => (
           document.querySelector('#apple-starfield')?.dataset.formation === 'complete'
         ), undefined, { timeout: 7000 });
 
-        assert.equal(await canvas.getAttribute('role'), 'button');
-        assert.equal(await canvas.getAttribute('tabindex'), '0');
-        await canvas.click({ position: { x: 720, y: 450 }, timeout: 1000 });
+        await replay.click({ timeout: 1000 });
         assert.notEqual(await canvas.getAttribute('data-formation'), 'complete');
         await page.waitForFunction(() => (
           document.querySelector('#apple-starfield')?.dataset.formation === 'complete'
         ), undefined, { timeout: 7000 });
 
-        await canvas.press('Enter');
+        await replay.press('Enter');
         assert.notEqual(await canvas.getAttribute('data-formation'), 'complete');
       } finally {
         await page.close();
@@ -263,6 +341,13 @@ async function main() {
         await page.waitForFunction(() => (
           document.querySelector('#apple-starfield')?.dataset.formation === 'complete'
         ));
+
+        await page.locator('#recent').scrollIntoViewIfNeeded();
+        await page.waitForFunction(() => Number(document.querySelector('#apple-starfield').dataset.scatter) > 0.99);
+        const staticBefore = await starMetrics(page);
+        await page.waitForTimeout(400);
+        assert.deepEqual(await starMetrics(page), staticBefore, 'reduced-motion background is animated');
+        assert.equal(await page.getByRole('button', { name: '重新汇聚苹果星空' }).isDisabled(), true);
 
         const initialSignature = await page.locator('#apple-starfield').evaluate((canvas) => {
           const pixels = canvas.getContext('2d').getImageData(
