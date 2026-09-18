@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { createHash } = require('node:crypto');
 const MarkdownIt = require('markdown-it');
 
 const markdown = new MarkdownIt({
@@ -221,6 +222,28 @@ function buildSite({ rootDirectory, outputDirectory }) {
     const detailPath = path.join(output, 'articles', article.slug, 'index.html');
     fs.mkdirSync(path.dirname(detailPath), { recursive: true });
     fs.writeFileSync(detailPath, renderArticleDetail(article), 'utf8');
+  }
+
+  // Content-addressed URLs prevent old CDN assets from mixing with new HTML.
+  const assetVersions = new Map();
+  for (const asset of ['assets/css/site.css', 'assets/js/site.js', 'assets/js/apple-starfield.js']) {
+    const bytes = fs.readFileSync(path.join(output, asset));
+    const extension = path.extname(asset);
+    const digest = createHash('sha256').update(bytes).digest('hex').slice(0, 16);
+    const versioned = asset.slice(0, -extension.length) + '.' + digest + extension;
+    fs.writeFileSync(path.join(output, versioned), bytes);
+    assetVersions.set('/' + asset, '/' + versioned);
+  }
+  const pages = ['index.html', 'daily/index.html', 'about/index.html', 'articles/index.html',
+    ...articles.map((article) => `articles/${article.slug}/index.html`)];
+  for (const page of pages) {
+    const file = path.join(output, page);
+    const html = fs.readFileSync(file, 'utf8').replace(
+      /((?:src|href)=")([^"\s]+)(")/g,
+      (match, prefix, url, suffix) => assetVersions.has(url)
+        ? prefix + assetVersions.get(url) + suffix : match,
+    );
+    fs.writeFileSync(file, html, 'utf8');
   }
 
   return { outputDirectory: output, articles };

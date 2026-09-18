@@ -51,6 +51,13 @@ function run() {
   assert.match(detailHtml, /<h1/);
   assert.match(detailHtml, /aria-current="page"/);
   assert.doesNotMatch(detailHtml, /<script>/i);
+  for (const html of [indexHtml, detailHtml, fs.readFileSync(path.join(outputDirectory, 'daily/index.html'), 'utf8')]) {
+    for (const asset of ['site', 'apple-starfield']) {
+      const match = html.match(new RegExp(`/assets/js/${asset}\\.[a-f0-9]{16}\\.js`));
+      assert.ok(match, `${asset} is missing a content version`);
+      assert.ok(fs.existsSync(path.join(outputDirectory, match[0].slice(1))), 'versioned asset is missing');
+    }
+  }
 
   process.stdout.write('PASS article metadata and static generation contract\n');
 }
