@@ -226,7 +226,14 @@ function buildSite({ rootDirectory, outputDirectory }) {
 
   // Content-addressed URLs prevent old CDN assets from mixing with new HTML.
   const assetVersions = new Map();
-  for (const asset of ['assets/css/site.css', 'assets/js/site.js', 'assets/js/apple-starfield.js']) {
+  for (const asset of [
+    'assets/css/site.css',
+    'assets/js/site.js',
+    'assets/js/apple-starfield.js',
+    'assets/css/orbit-game.css',
+    'assets/js/orbit-engine.js',
+    'assets/js/orbit-game.js',
+  ]) {
     const bytes = fs.readFileSync(path.join(output, asset));
     const extension = path.extname(asset);
     const digest = createHash('sha256').update(bytes).digest('hex').slice(0, 16);

@@ -8,6 +8,7 @@
     <title>About Archive | ZiWei ARCHIVE</title>
     <link rel="icon" href="/assets/img/apple-source.jpg" type="image/jpeg">
     <link rel="stylesheet" href="/assets/css/site.css">
+    <link rel="stylesheet" href="/assets/css/orbit-game.css">
   </head>
   <body data-page="about">
     <header class="site-header">
@@ -25,6 +26,65 @@
     <div class="page-shell">
       <main class="page-main">
         <div class="about-heading reveal is-visible"><h1>ABOUT ARCHIVE</h1></div>
+
+        <section class="orbit-lab" id="orbit-lab" data-mode="idle" aria-labelledby="orbit-title">
+          <header class="orbit-heading">
+            <div>
+              <p class="orbit-eyebrow">PLAYABLE ARCHIVE / 001</p>
+              <h2 id="orbit-title">星际甩尾<span>ORBIT DRIFT</span></h2>
+            </div>
+            <span class="orbit-record">本机最佳 <strong id="orbit-best">0000</strong></span>
+          </header>
+          <div class="orbit-console">
+            <div class="orbit-hud" aria-label="飞行数据">
+              <span>信号 <strong id="orbit-score">0000</strong></span>
+              <span>连击 <strong id="orbit-combo">x1</strong></span>
+              <span>航程 <strong id="orbit-distance">0</strong><small> m</small></span>
+              <span>剩余 <strong id="orbit-time">75</strong><small> s</small></span>
+            </div>
+            <div class="orbit-stage">
+              <canvas id="orbit-canvas" tabindex="0" aria-label="星际甩尾飞行区域" aria-describedby="orbit-instructions"></canvas>
+              <div class="orbit-intro" id="orbit-intro">
+                <span class="orbit-coordinate">SECTOR 0x5A / FUEL LOW</span>
+                <h3>燃料不足.<br>借一颗星, 飞出去.</h3>
+                <p>按住引力, 松手弹射.<br>在黑洞追上之前, 留下一条漂亮的航线.</p>
+                <button class="orbit-button orbit-button--primary" id="orbit-start" type="button" disabled>开始飞行 <span aria-hidden="true">↗</span></button>
+                <span class="orbit-short-note">一局 75 秒 / 鼠标 · 触屏 · 空格键</span>
+              </div>
+              <div class="orbit-overlay" id="orbit-overlay" hidden>
+                <span class="orbit-coordinate" id="orbit-result-code">FLIGHT PAUSED</span>
+                <h3 id="orbit-result-title">航线已暂停</h3>
+                <p id="orbit-result-copy">准备好后, 继续出发.</p>
+                <div class="orbit-result-actions">
+                  <button class="orbit-button orbit-button--primary" id="orbit-retry" type="button" hidden>再飞一次</button>
+                  <button class="orbit-button" id="orbit-resume" type="button">继续飞行</button>
+                </div>
+              </div>
+              <div class="orbit-flight-hint" id="orbit-flight-hint" aria-hidden="true"></div>
+            </div>
+            <div class="orbit-controls">
+              <button class="orbit-button orbit-grab" id="orbit-grab" type="button" aria-pressed="false" disabled>按住引力 <kbd>SPACE</kbd></button>
+              <button class="orbit-button" id="orbit-rewind" type="button" disabled>倒带 2 秒 <kbd>R</kbd></button>
+              <button class="orbit-button orbit-small-control" id="orbit-pause" type="button" disabled>暂停</button>
+              <button class="orbit-button orbit-small-control" id="orbit-close" type="button" disabled>退出</button>
+            </div>
+          </div>
+          <div class="orbit-caption">
+            <p id="orbit-status" role="status" aria-live="polite" aria-atomic="true">等待起飞. 最佳成绩与航线只保存在当前浏览器.</p>
+            <label class="orbit-calm"><input id="orbit-calm" type="checkbox"> 柔和画面</label>
+          </div>
+          <details class="orbit-manual">
+            <summary>飞行手册 <span aria-hidden="true">+</span></summary>
+            <div id="orbit-instructions">
+              <p><strong>借力.</strong> 按住画面或引力键, 抓住亮圈内的星球. 松开沿虚线方向飞出. 再按一次可以抓住另一颗星球, 紧急改道.</p>
+              <p><strong>冒险.</strong> 穿过金色信号环得分, 连续换轨提高倍率. 红色陨石会撞毁飞船, 身后的黑洞会不断追赶. 停留太久就会被吞没.</p>
+              <p><strong>救场.</strong> 每局可以倒带一次, 坠毁后仍有机会回到两秒前. 连续到达新星球会获得护盾、引力强化或收集分身.</p>
+              <p><strong>再来.</strong> 坚持 75 秒完成逃离. 重试保留当前航线, 刷新页面会开启新航线. 同航线的最佳飞行会留下虚线幽灵, 它不会发生碰撞.</p>
+              <p>空格键控制引力, R 倒带, P 或 Esc 暂停. 切到其他窗口或离开游戏区域会自动暂停. 柔和画面关闭闪烁、拖尾和镜头缓动, 保留飞行操作.</p>
+            </div>
+          </details>
+          <noscript><p class="orbit-no-script">开启 JavaScript 后即可驾驶飞船, 下方的站点介绍仍可直接阅读.</p></noscript>
+        </section>
 
         <section class="about-grid" aria-label="站点介绍">
           <article class="about-card reveal is-visible" data-protocol="ACC_PROTO // INTEL_SOURCE">
@@ -88,5 +148,7 @@
 
     <script defer src="/assets/js/apple-starfield.js"></script>
     <script defer src="/assets/js/site.js"></script>
+    <script defer src="/assets/js/orbit-engine.js"></script>
+    <script defer src="/assets/js/orbit-game.js"></script>
   </body>
 </html>

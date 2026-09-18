@@ -5,9 +5,9 @@
   "description": "Static personal archive for zw.enener.com",
   "scripts": {
     "build": "node tools/build-site.cjs",
-    "test": "node tests/site.test.cjs && node tests/articles.test.cjs && node tests/starfield-lifecycle.test.cjs",
+    "test": "node tests/site.test.cjs && node tests/articles.test.cjs && node tests/starfield-lifecycle.test.cjs && node --test tests/orbit-engine.test.cjs && node tests/orbit-game.test.cjs",
     "serve": "node tools/server.cjs",
-    "check": "node --check assets/js/site.js && node --check assets/js/apple-starfield.js && node --check tools/build-site.cjs && node --check tools/server.cjs"
+    "check": "node --check assets/js/site.js && node --check assets/js/apple-starfield.js && node --check assets/js/orbit-engine.js && node --check assets/js/orbit-game.js && node --check tools/build-site.cjs && node --check tools/server.cjs"
   },
   "dependencies": {
     "markdown-it": "^14.1.0"
