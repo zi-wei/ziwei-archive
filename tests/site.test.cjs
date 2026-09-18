@@ -272,6 +272,21 @@ async function main() {
               );
             }
 
+            if (route.name !== 'home') {
+              await page.waitForFunction(() => document.querySelector('#apple-starfield')?.dataset.ready === 'true');
+              assert.equal(await page.locator('#apple-starfield').getAttribute('data-scatter'), '1.000');
+              const stars = await starMetrics(page);
+              assert.ok(stars.lit > 100, 'ambient stars are not visible');
+              await page.waitForTimeout(400);
+              assert.notEqual((await starMetrics(page)).signature, stars.signature, 'ambient stars stopped moving');
+              await page.emulateMedia({ reducedMotion: 'reduce' });
+              await page.waitForTimeout(100);
+              const still = await starMetrics(page);
+              await page.waitForTimeout(200);
+              assert.deepEqual(await starMetrics(page), still, 'ambient stars ignore reduced motion');
+              await page.emulateMedia({ reducedMotion: 'no-preference' });
+            }
+
             if (route.name === 'article-detail') {
               const typography = await page.locator('.article-content').evaluate((element) => {
                 const style = getComputedStyle(element);

@@ -212,13 +212,17 @@ summary {
   isolation: isolate;
 }
 
-body[data-page="home"] {
+body {
   isolation: isolate;
 }
 
-body[data-page="home"] .page-shell {
+.page-shell {
   position: relative;
   z-index: 1;
+}
+
+body:not([data-page="home"]) .page-main {
+  background: linear-gradient(90deg, transparent, rgba(8, 9, 9, 0.55) 12%, rgba(8, 9, 9, 0.55) 88%, transparent);
 }
 
 .hero-canvas {

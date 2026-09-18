@@ -35,6 +35,7 @@
     this.source = null;
     this.hero = document.querySelector('.hero');
     this.stage = document.querySelector('.hero-stage');
+    this.ambient = !this.stage;
     this.replayButton = document.querySelector('.apple-replay');
     this.targetPoints = [];
     this.particles = [];
@@ -69,6 +70,15 @@
       this.motionQuery.addEventListener('change', this.boundMotion);
     }
     document.fonts.ready.then(function () { if (!self.destroyed) self.resize(); });
+
+    if (this.ambient) {
+      this.targetPoints = [{ x: 0, y: 0, edge: false }];
+      this.createParticles();
+      this.introStart = performance.now() - INTRO_DURATION;
+      this.drawFrame(performance.now());
+      if (!this.reduceMotion) this.animate();
+      return;
+    }
 
     var image = new Image();
     image.decoding = 'async';
@@ -245,6 +255,11 @@
       this.canvas.height = height;
     }
     if (crossedBreakpoint && this.targetPoints.length) this.createParticles();
+    if (this.ambient) {
+      this.targetWidth = 0;
+      this.centerY = rect.height * 0.5;
+      this.sceneProgress = 1;
+    }
     if (this.stage) {
       var stageRect = this.stage.getBoundingClientRect();
       var stageTop = parseFloat(getComputedStyle(this.stage).top) || 0;
@@ -392,6 +407,7 @@
         : smootherstep(clamp(introProgress * 5 - particle.delay * 2, 0, 1));
       var twinkle = 0.82 + Math.sin(motionTime * particle.speed + particle.phase) * 0.18;
       var alpha = particle.alpha * reveal * twinkle * (1 - scrollScatter * 0.32);
+      if (this.ambient) alpha *= 0.72;
       var size = particle.size * (0.72 + pull * 0.36) * (1 - scrollScatter * 0.18);
       context.fillStyle = 'rgba(' + particle.color + ',' + alpha.toFixed(3) + ')';
 

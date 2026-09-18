@@ -46,9 +46,21 @@
   }
 
   var canvas = document.getElementById('apple-starfield');
+  if (!canvas && window.AppleStarfield) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'apple-starfield';
+    canvas.className = 'hero-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    body.prepend(canvas);
+  }
   if (canvas && window.AppleStarfield) {
     var field = new window.AppleStarfield(canvas, canvas.getAttribute('data-source'));
     field.start();
-    window.addEventListener('pagehide', function () { field.destroy(); }, { once: true });
+    window.addEventListener('pagehide', function () { field.destroy(); });
+    window.addEventListener('pageshow', function (event) {
+      if (!event.persisted) return;
+      field = new window.AppleStarfield(canvas, canvas.getAttribute('data-source'));
+      field.start();
+    });
   }
 }());

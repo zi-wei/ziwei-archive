@@ -117,6 +117,7 @@ function renderPage({ title, description, currentRoute, content, mainClass = 'pa
         <p>DESIGNED FOR ZIWEI <span aria-hidden="true">&#169;</span> <span data-year>2026</span></p>
       </footer>
     </div>
+    <script defer src="/assets/js/apple-starfield.js"></script>
     <script defer src="/assets/js/site.js"></script>
   </body>
 </html>
