@@ -1,5 +1,6 @@
 /deploy/
-/docs/
+/docs/*
+!/docs/starfield-rebuild.md
 /tools/*
 !/tools/build-site.cjs
 !/tools/server.cjs
